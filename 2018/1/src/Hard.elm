@@ -1,11 +1,12 @@
-module Easy exposing (..)
+module Hard exposing (..)
 
 
 import Browser
+import Set exposing (Set)
 import Html exposing (Html, button, div, h1, h2, hr, p, ul, li, text, textarea)
 import Html.Attributes exposing (style, placeholder, value, rows, cols)
 import Html.Events exposing (onClick, onInput)
-
+import Debug exposing (..)
 
 
 -- MAIN
@@ -63,15 +64,47 @@ update msg model =
 compute_stream : Model -> String -> Model
 compute_stream model text =
   let
-    lines = String.lines text
-    numbers = List.filterMap String.toInt lines
-    number_sum = List.foldl (+) 0 numbers
+    first_repeat = find_first_repeat 1000000 (Set.singleton 0) (frequency_offsets text) 0
   in
     { model
     | input = text
-    , frequency = number_sum
+    , frequency = case first_repeat of
+         Nothing -> 0
+         Just freq -> freq
+    , debug = case first_repeat of
+        Nothing -> "Error finding repeating frequency"
+        Just freq -> ""
     }
 
+
+find_first_repeat : Int -> Set Int -> List Int -> Int -> Maybe Int
+find_first_repeat max_iter past_frequencies deltas start_value =
+  if max_iter <= 0 then
+    Nothing
+  else
+    case deltas of
+      [] -> Nothing
+      [x] -> Nothing
+      (x::xs) ->
+        let
+          value = start_value + x
+          seen = Set.member value past_frequencies
+        in
+          case seen of
+            True -> Just value
+            False ->
+              let
+                new_deltas = xs ++ [x]
+                new_past_frequencies = Set.insert value past_frequencies
+              in
+                find_first_repeat (max_iter - 1) new_past_frequencies new_deltas value
+
+frequency_offsets : String -> List Int
+frequency_offsets text =
+  let
+    lines = String.lines text
+  in
+    List.filterMap String.toInt lines
 
 
 -- SUBSCRIPTIONS
@@ -149,25 +182,29 @@ frame title contents =
     ((h1 [] title) :: contents)
 
 puzzle_title : String
-puzzle_title = "Day 1: Chronal Calibration - Part 1"
+puzzle_title = "Day 1: Chronal Calibration - Part 2"
 
 puzzle_description : Html msg
 puzzle_description =
   div []
-    [ p [] [text "After feeling like you've been falling for a few minutes, you look at the device's tiny screen. \"Error: Device must be calibrated before first use. Frequency drift detected. Cannot maintain destination lock.\" Below the message, the device shows a sequence of changes in frequency (your puzzle input). A value like +6 means the current frequency increases by 6; a value like -3 means the current frequency decreases by 3."]
-    , p [] [text "For example, if the device displays frequency changes of +1, -2, +3, +1, then starting from a frequency of zero, the following changes would occur:"]
+    [ p [] [text "You notice that the device repeats the same frequency change list over and over. To calibrate the device, you need to find the first frequency it reaches twice."]
+    , p [] [text "For example, using the same list of changes above, the device would loop as follows:"]
     , ul []
       [ li [] [text "Current frequency  0, change of +1; resulting frequency  1."]
       , li [] [text "Current frequency  1, change of -2; resulting frequency -1."]
       , li [] [text "Current frequency -1, change of +3; resulting frequency  2."]
       , li [] [text "Current frequency  2, change of +1; resulting frequency  3."]
+      , li [] [text "(At this point, the device continues from the start of the list.)"]
+      , li [] [text "Current frequency  3, change of +1; resulting frequency  4."]
+      , li [] [text "Current frequency  4, change of -2; resulting frequency  2, which has already been seen."]
       ]
-    , p [] [text "In this example, the resulting frequency is 3"]
-    , p [] [text "Here are other example situations:"]
+    , p [] [text "In this example, the first frequency reached twice is 2. Note that your device might need to repeat its list of frequency changes many times before a duplicate frequency is found, and that duplicates might be found while in the middle of processing the list."]
+    , p [] [text "Here are other examples:"]
     , ul []
-      [ li [] [text "+1, +1, +1 results in  3"]
-      , li [] [text "+1, +1, -2 results in  0"]
-      , li [] [text "-1, -2, -3 results in -6"]
+      [ li [] [text "+1, -1 first reaches 0 twice."]
+      , li [] [text "+3, +3, +4, -2, -4 first reaches 10 twice."]
+      , li [] [text "-6, +3, +8, +5, -6 first reaches 5 twice."]
+      , li [] [text "+7, +7, -2, -7, -4 first reaches 14 twice."]
       ]
-    , p [] [text "Starting with a frequency of zero, what is the resulting frequency after all of the changes in frequency have been applied?"]
+    , p [] [text "What is the first frequency your device reaches twice?"]
     ]
