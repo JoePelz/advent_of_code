@@ -64,8 +64,7 @@ compute_stream : Model -> String -> Model
 compute_stream model text =
   let
     lines = String.lines text
-    maybe_numbers = List.map String.toInt lines
-    numbers = ignore_errors maybe_numbers
+    numbers = List.filterMap String.toInt lines
     number_sum = List.foldl (+) 0 numbers
   in
     { model
@@ -73,13 +72,6 @@ compute_stream model text =
     , frequency = number_sum
     }
 
-
-ignore_errors : List (Maybe a) -> List a
-ignore_errors maybes =
-  let
-    only_real_values = List.filterMap (\x -> x) maybes
-  in
-    only_real_values
 
 
 -- SUBSCRIPTIONS
