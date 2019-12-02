@@ -172,7 +172,7 @@ frame title contents =
     ((h1 [] title) :: contents)
 
 puzzle_title : String
-puzzle_title = "Day 1: The Tyranny of the Rocket Equation -- Part 1"
+puzzle_title = "Day 1: The Tyranny of the Rocket Equation -- Part 2"
 
 puzzle_description : Html msg
 puzzle_description =
